@@ -37,11 +37,16 @@ DATABASE_URL = os.environ.get('DATABASE_URL', 'postgres://postgres:qkTkjkQANVmhN
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-...')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # Получаем ALLOWED_HOSTS из переменной окружения и добавляем localhost для разработки
 allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()] if allowed_hosts_env else []
+
+# Добавляем Railway хост принудительно
+railway_host = 'web-production-a61b6.up.railway.app'
+if railway_host not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(railway_host)
 
 # Добавляем localhost для разработки, если DEBUG=True
 if DEBUG:
@@ -53,7 +58,9 @@ if DEBUG:
 # В settings.py
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
-    'http://127.0.0.1:8000'
+    'http://127.0.0.1:8000',
+    'https://web-production-a61b6.up.railway.app',
+    'http://web-production-a61b6.up.railway.app'
 ]
 
 # Дополнительные настройки CSRF для разработки
@@ -214,8 +221,7 @@ NPM_BIN_PATH = "C:/Program Files/nodejs/npm.cmd"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# CSRF trusted origins for Railway production
-CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://web-production-a61b6.up.railway.app').split(',')
+# CSRF trusted origins настроены выше
 
 
 # Настройки S3 Selectel
