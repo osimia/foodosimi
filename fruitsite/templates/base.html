@@ -4,7 +4,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>{% block title %}Fruitsite — маркетплейс фруктов{% endblock %}</title>
+  <title>{% block title %}OsimiFood — маркетплейс фруктов{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="{% static 'css/dist/styles.css' %}" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -225,6 +225,19 @@
         transform: translateY(-3px);
       }
     }
+
+    /* Стили для логотипа OsimiFood */
+    .site-logo {
+      color: #FF6B35 !important;
+      text-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .site-logo:hover {
+      color: #FF8A5B !important;
+      text-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+      transform: scale(1.05);
+    }
   </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-900 min-h-screen flex flex-col">
@@ -235,7 +248,7 @@
       <div class="flex items-center justify-between">
         <!-- Лого -->
         <div class="flex items-center">
-          <a href="/" class="text-3xl font-extrabold text-blue-600">FRUITSITE</a>
+          <a href="/" class="text-3xl font-extrabold site-logo">OsimiFood</a>
         </div>
 
         <!-- Навигация -->
@@ -303,7 +316,7 @@
   <!-- Футер (Footer) -->
   <footer class="bg-gray-100 border-t">
     <div class="common-container text-center text-xs text-gray-500 py-4">
-      &copy; {{ now|date:"Y" }} Fruitsite. Все права защищены.
+      &copy; {{ now|date:"Y" }} OsimiFood. Все права защищены.
     </div>
   </footer>
 
