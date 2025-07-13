@@ -1,0 +1,493 @@
+{% load static %}
+{% load cart_tags %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Fruitsite — маркетплейс фруктов{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="{% static 'css/dist/styles.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    /* Общие стили для контейнеров (одинаковые отступы) */
+    .common-container {
+      max-width: 1536px; /* max-w-screen-2xl */
+      padding-left: 1rem;  /* px-4 */
+      padding-right: 1rem; /* px-4 */
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    @media (min-width: 768px) {
+      .common-container {
+        padding-left: 2rem;  /* md:px-8 */
+        padding-right: 2rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .common-container {
+        padding-left: 4rem;  /* lg:px-16 */
+        padding-right: 4rem;
+      }
+    }
+
+    /* Модальное окно */
+    .phone-login-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .phone-login-modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      animation: modalFadeIn 0.3s;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Стили для навигационных кнопок */
+    .nav-btn {
+      background: linear-gradient(135deg, var(--bg-from), var(--bg-to));
+      border: none;
+      color: white !important;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .nav-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .nav-btn:hover::before {
+      left: 100%;
+    }
+
+    .nav-btn-products {
+      --bg-from: #4f46e5;
+      --bg-to: #6366f1;
+    }
+
+    .nav-btn-categories {
+      --bg-from: #7c3aed;
+      --bg-to: #8b5cf6;
+    }
+
+    .nav-btn-orders {
+      --bg-from: #059669;
+      --bg-to: #10b981;
+    }
+
+    .nav-btn-cart {
+      --bg-from: #ea580c;
+      --bg-to: #f97316;
+    }
+
+    .nav-btn-logout {
+      --bg-from: #dc2626;
+      --bg-to: #ef4444;
+    }
+
+    .nav-btn-login {
+      --bg-from: #2563eb;
+      --bg-to: #3b82f6;
+    }
+
+    .nav-btn-seller {
+      --bg-from: #7c2d12;
+      --bg-to: #a16207;
+    }
+
+    /* Стили для счетчика корзины */
+    .cart-counter {
+      animation: pulse-glow 2s infinite;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+      border: 2px solid white;
+      font-size: 11px;
+      font-weight: 800;
+      min-width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      position: relative;
+    }
+
+    .cart-counter::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+      border-radius: 50%;
+      z-index: -1;
+      animation: rotate-border 3s linear infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes rotate-border {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Анимация для появления/исчезновения счетчика */
+    .cart-counter.show {
+      animation: bounce-in 0.5s ease-out;
+    }
+
+    @keyframes bounce-in {
+      0% {
+        opacity: 0;
+        transform: scale(0) rotate(180deg);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.2) rotate(0deg);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+    /* Улучшенный стиль для кнопки корзины */
+    .cart-btn {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .cart-btn:hover .cart-counter {
+      animation: bounce 0.6s ease-in-out;
+    }
+
+    /* Подсветка кнопки корзины при наличии товаров */
+    .cart-btn.has-items {
+      box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+    }
+
+    .cart-btn.has-items:hover {
+      box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+      transform: translateY(-1px);
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-5px);
+      }
+      60% {
+        transform: translateY(-3px);
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-900 min-h-screen flex flex-col">
+
+  <!-- Шапка (Header) -->
+  <div class="w-full bg-white shadow-sm">
+    <div class="common-container py-4"> <!-- Одинаковый контейнер -->
+      <div class="flex items-center justify-between">
+        <!-- Лого -->
+        <div class="flex items-center">
+          <a href="/" class="text-3xl font-extrabold text-blue-600">FRUITSITE</a>
+        </div>
+
+        <!-- Навигация -->
+        <div class="flex items-center gap-6 text-sm">
+          {% if user.is_authenticated %}
+            {% if user.role == "master" %}
+              <a href="{% url 'products:my_products' %}" class="nav-btn nav-btn-products px-4 py-2 rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+                <i class="fas fa-box"></i>
+                <span>Мои товары</span>
+              </a>
+              <a href="{% url 'products:category_list' %}" class="nav-btn nav-btn-categories px-4 py-2 rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+                <i class="fas fa-tags"></i>
+                <span>Категории</span>
+              </a>
+              <a href="{% url 'orders:seller_orders' %}" class="nav-btn nav-btn-orders px-4 py-2 rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Заказы</span>
+              </a>
+            {% else %}
+              <a href="{% url 'orders:my_orders' %}" class="nav-btn nav-btn-orders px-4 py-2 rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Заказы</span>
+              </a>
+              <a href="{% url 'cart:view_cart' %}" class="nav-btn nav-btn-cart cart-btn px-4 py-2 rounded-lg shadow-md hover:shadow-lg flex items-center gap-2 relative">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Корзина</span>
+                {% cart_items_count as cart_count %}
+                {% if cart_count > 0 %}
+                  <span id="cart-counter" class="cart-counter absolute -top-2 -right-2 text-white rounded-full show">
+                    {{ cart_count }}
+                  </span>
+                {% else %}
+                  <span id="cart-counter" class="cart-counter absolute -top-2 -right-2 text-white rounded-full hidden">
+                    0
+                  </span>
+                {% endif %}
+              </a>
+            {% endif %}
+            <a href="{% url 'accounts:logout' %}" class="nav-btn nav-btn-logout px-4 py-2 rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Выйти</span>
+            </a>
+          {% else %}
+            <a href="javascript:void(0)" id="openPhoneLoginModal" class="nav-btn nav-btn-login px-4 py-2 rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+              <i class="fas fa-user"></i>
+              <span>Вход покупателя</span>
+            </a>
+            <a href="{% url 'accounts:master_login' %}" class="nav-btn nav-btn-seller px-4 py-2 rounded-lg shadow-md hover:shadow-lg flex items-center gap-2">
+              <i class="fas fa-store"></i>
+              <span>Вход продавца</span>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Контент (Main) -->
+  <main class="flex-1">
+    <div class="common-container py-8"> <!-- Одинаковый контейнер -->
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Футер (Footer) -->
+  <footer class="bg-gray-100 border-t">
+    <div class="common-container text-center text-xs text-gray-500 py-4">
+      &copy; {{ now|date:"Y" }} Fruitsite. Все права защищены.
+    </div>
+  </footer>
+
+  <!-- Модальное окно для входа по телефону -->
+  {% if not user.is_authenticated %}
+  <div id="phoneLoginModal" class="phone-login-modal">
+    <div class="modal-content w-full max-w-md mx-4">
+      <div class="flex justify-between items-center border-b p-4">
+        <h2 class="text-xl font-semibold">Вход</h2>
+        <button type="button" class="text-gray-400 hover:text-gray-500" id="closeModal">
+          <span class="text-2xl">&times;</span>
+        </button>
+      </div>
+      
+      <div class="p-6">
+        <h3 class="text-lg font-medium mb-4">Введите номер телефона</h3>
+        
+        <form method="post" action="{% url 'accounts:login' %}">
+          {% csrf_token %}
+          <div class="mb-6">
+            <input type="tel" name="phone" id="phoneInput" 
+                  class="w-full border border-gray-300 rounded-lg p-3 text-lg" 
+                  placeholder="+992 __ __ __ __" 
+                  required>
+          </div>
+          
+          <button type="submit" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 rounded-lg transition">
+            Войти
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('phoneLoginModal');
+      const openModalBtn = document.getElementById('openPhoneLoginModal');
+      const closeModalBtn = document.getElementById('closeModal');
+      
+      if (openModalBtn) {
+        openModalBtn.addEventListener('click', function() {
+          modal.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        });
+      }
+      
+      if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+          modal.classList.remove('active');
+          document.body.style.overflow = '';
+        });
+      }
+      
+      if (modal) {
+        modal.addEventListener('click', function(event) {
+          if (event.target === modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+          }
+        });
+      }
+      
+      const phoneInput = document.getElementById('phoneInput');
+      if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+          let value = e.target.value.replace(/\D/g, '');
+          if (value.startsWith('992')) {
+            if (value.length > 3) value = '+' + value.substring(0, 3) + ' ' + value.substring(3);
+            if (value.length > 7) value = value.substring(0, 7) + ' ' + value.substring(7);
+            if (value.length > 11) value = value.substring(0, 11) + ' ' + value.substring(11);
+            if (value.length > 14) value = value.substring(0, 14) + ' ' + value.substring(14, 16);
+          } else if (value) {
+            value = '+992' + value;
+          } else {
+            value = '+992 ';
+          }
+          e.target.value = value;
+        });
+        
+        if (openModalBtn) {
+          openModalBtn.addEventListener('click', function() {
+            setTimeout(() => {
+              phoneInput.focus();
+            }, 300);
+          });
+        }
+      }
+    });
+  </script>
+  {% endif %}
+  
+  {% block extra_js %}{% endblock %}
+  
+  <!-- Global cart counter update function -->
+  <script>
+    function updateCartCounter() {
+      // Получаем новое количество товаров в корзине через AJAX
+      fetch('/cart/count/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        const cartBadge = document.getElementById('cart-counter');
+        const cartBtn = document.querySelector('.cart-btn');
+        
+        if (cartBadge) {
+          const oldCount = parseInt(cartBadge.textContent) || 0;
+          const newCount = data.count;
+          
+          if (newCount > 0) {
+            cartBadge.textContent = newCount;
+            cartBadge.classList.remove('hidden');
+            cartBtn?.classList.add('has-items');
+            
+            // Добавляем анимацию при изменении
+            if (newCount !== oldCount) {
+              cartBadge.classList.remove('show');
+              cartBadge.offsetHeight; // Force reflow
+              cartBadge.classList.add('show');
+              
+              // Дополнительная анимация при увеличении количества
+              if (newCount > oldCount) {
+                cartBadge.style.animation = 'bounce-in 0.6s ease-out';
+                setTimeout(() => {
+                  cartBadge.style.animation = '';
+                }, 600);
+              }
+            }
+          } else {
+            cartBadge.classList.add('hidden');
+            cartBadge.classList.remove('show');
+            cartBtn?.classList.remove('has-items');
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error updating cart counter:', error);
+      });
+    }
+    
+    // Обновляем счетчик при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+      const cartBtn = document.querySelector('.cart-btn');
+      const cartCounter = document.getElementById('cart-counter');
+      
+      if (cartCounter) {
+        updateCartCounter();
+        
+        // Инициализируем класс has-items при загрузке
+        const currentCount = parseInt(cartCounter.textContent) || 0;
+        if (currentCount > 0 && cartBtn) {
+          cartBtn.classList.add('has-items');
+        }
+      }
+      
+      // Добавляем эффект при наведении на кнопку корзины
+      if (cartBtn) {
+        cartBtn.addEventListener('mouseenter', function() {
+          const counter = this.querySelector('.cart-counter');
+          if (counter && !counter.classList.contains('hidden')) {
+            counter.style.animation = 'bounce 0.6s ease-in-out';
+            setTimeout(() => {
+              counter.style.animation = '';
+            }, 600);
+          }
+        });
+      }
+    });
+    
+    // Функция для анимации при добавлении товара
+    function animateCartAdd() {
+      const cartCounter = document.getElementById('cart-counter');
+      if (cartCounter) {
+        cartCounter.style.animation = 'pulse-glow 0.8s ease-out';
+        setTimeout(() => {
+          cartCounter.style.animation = '';
+        }, 800);
+      }
+    }
+  </script>
+</body>
+</html>

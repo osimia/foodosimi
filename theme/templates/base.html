@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Fruitsite — маркетплейс фруктов{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Подключаем Tailwind билд -->
+  <link href="{% static 'css/dist/styles.css' %}" rel="stylesheet">
+
+  <!-- FontAwesome для иконок -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <!-- Шрифт в стиле OZON -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-sans text-gray-900 min-h-screen flex flex-col">
+
+  <!-- Header упрощенный -->
+  <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+    <!-- Логотип -->
+    <div class="flex items-center">
+      <a href="/" class="text-3xl font-extrabold text-blue-600">FRUITSITE</a>
+    </div>
+
+    <!-- User навигация -->
+    <div class="flex items-center gap-6 text-sm">
+      {% if user.is_authenticated %}
+        {% if user.role == "master" %}
+          <a href="{% url 'accounts:my_products' %}" class="hover:underline">Мои товары</a>
+          <a href="{% url 'products:category_list' %}" class="hover:underline">Мои категории</a>
+        {% endif %}
+        <a href="{% url 'orders:my_orders' %}" class="hover:underline">Заказы</a>
+        <a href="{% url 'cart:view_cart' %}" class="hover:underline">Корзина</a>
+        <a href="{% url 'accounts:profile' %}" class="hover:underline">Профиль</a>
+        <a href="{% url 'accounts:logout' %}" class="hover:underline text-red-600">Выйти</a>
+      {% else %}
+        <a href="{% url 'account_login' %}" class="hover:underline">Войти</a>
+      {% endif %}
+    </div>
+  </header>
+  </header>
+
+  <!-- Сообщения -->
+  {% if messages %}
+    <div class="container mx-auto p-4">
+      {% for message in messages %}
+        <div class="mb-2 p-3 rounded text-white 
+          {% if message.tags == 'error' %}bg-red-500
+          {% elif message.tags == 'success' %}bg-green-500
+          {% else %}bg-blue-500{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Основной контент -->
+  <main class="flex-1 container mx-auto px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Футер -->
+  <footer class="bg-gray-100 border-t p-4 text-center text-xs text-gray-500">
+    &copy; {{ now|date:"Y" }} Fruitsite. Все права защищены.
+  </footer>
+
+</body>
+</html>

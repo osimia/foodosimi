@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+<style>
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0,0,0);
+  }
+  40%, 43% {
+    transform: translate3d(0,-15px,0);
+  }
+  70% {
+    transform: translate3d(0,-7px,0);
+  }
+  90% {
+    transform: translate3d(0,-2px,0);
+  }
+}
+</style>
+
+{% block content %}
+<div class="max-w-lg mx-auto bg-white shadow-2xl rounded-3xl p-8 border border-gray-100 relative overflow-hidden">
+  <!-- Декоративные элементы -->
+  <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 via-purple-500 to-amber-500"></div>
+  <div class="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full opacity-20"></div>
+  <div class="absolute -bottom-10 -left-10 w-20 h-20 bg-gradient-to-br from-amber-200 to-orange-200 rounded-full opacity-20"></div>
+  
+  <!-- Индикатор обновления -->
+  <div class="text-center mb-8">
+    {% if is_master %}
+    {% else %}
+      <div class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white p-6 rounded-2xl mb-6 shadow-lg relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 animate-pulse"></div>
+        <div class="relative z-10">
+          <div class="mb-4">
+            <i class="fas fa-shopping-cart text-4xl mb-2 animate-bounce"></i>
+          </div>
+          <h1 class="text-3xl font-bold mb-2">Добро пожаловать!</h1>
+          <p class="text-lg opacity-90 font-medium">Быстрый вход для покупок</p>
+          <div class="flex justify-center gap-4 mt-4 text-sm opacity-80">
+            <span><i class="fas fa-mobile-alt mr-1"></i>По телефону</span>
+            <span><i class="fas fa-rocket mr-1"></i>Быстро</span>
+            <span><i class="fas fa-shield-alt mr-1"></i>Безопасно</span>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="mb-4 p-3 rounded {% if message.tags == 'error' %}bg-red-500{% else %}bg-green-500{% endif %} text-white">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Убрали переключатель типов входа, теперь логика определяется автоматически:
+       - для мастеров (is_master=True): только по логину/паролю
+       - для покупателей (is_master=False): только по телефону 
+  -->
+
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+
+    {% if login_type == 'phone' %}
+      <!-- Форма входа по телефону -->
+      <div class="relative mb-6">
+        <label class="block mb-3 font-bold text-gray-800 flex items-center gap-2 text-lg">
+          <i class="fas fa-mobile-alt text-blue-500"></i>
+          Номер телефона
+        </label>
+        <div class="relative group">
+          <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors duration-200">
+            <i class="fas fa-phone-alt text-lg"></i>
+          </span>
+          {{ form.phone|add_class:"w-full border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl pl-12 pr-4 py-4 text-lg focus:outline-none focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-200 hover:border-blue-400 hover:shadow-lg font-medium" }}
+          <div class="absolute right-4 top-1/2 transform -translate-y-1/2 opacity-0 group-focus-within:opacity-100 transition-opacity duration-200">
+            <i class="fas fa-check-circle text-green-500"></i>
+          </div>
+        </div>
+        <div class="mt-4 p-4 bg-gradient-to-r from-orange-100 to-amber-100 rounded-xl border-2 border-orange-300 shadow-lg">
+          <p class="text-sm text-orange-800 flex items-start gap-2 font-medium">
+            <i class="fas fa-info-circle text-orange-600 mt-0.5 flex-shrink-0 text-lg"></i>
+            <span>
+              <strong class="text-orange-900">Новый пользователь?</strong> Просто введите номер телефона - мы автоматически создадим для вас аккаунт!
+            </span>
+          </p>
+        </div>
+      </div>
+    {% else %}
+      <!-- Форма входа по логину и паролю -->
+      <div class="space-y-8">
+        <!-- Поле имени пользователя -->
+        <div class="relative transform transition-all duration-300 hover:scale-[1.02]">
+          <label class="block mb-4 font-bold text-gray-800 flex items-center justify-center gap-3 text-xl">
+            <div class="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+              <i class="fas fa-user text-white text-sm"></i>
+            </div>
+            Имя пользователя
+          </label>
+          <div class="relative group">
+            <!-- Анимированная граница -->
+            <div class="absolute inset-0 bg-gradient-to-r from-orange-400 via-amber-400 to-red-400 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-sm"></div>
+            
+            <!-- Основное поле -->
+            <div class="relative bg-white rounded-2xl shadow-lg group-focus-within:shadow-2xl transition-all duration-300">
+              <span class="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-all duration-300 group-focus-within:scale-110">
+                <i class="fas fa-user text-xl"></i>
+              </span>
+              {{ form.username|add_class:"w-full border-3 border-gradient-to-r from-orange-200 to-amber-200 bg-gradient-to-br from-orange-25 via-amber-25 to-yellow-25 rounded-2xl pl-16 pr-16 py-5 text-xl text-center focus:outline-none focus:ring-0 focus:border-transparent transition-all duration-300 hover:shadow-lg font-medium placeholder-gray-400" }}
+              
+              <!-- Иконка успеха -->
+              <div class="absolute right-5 top-1/2 transform -translate-y-1/2 opacity-0 group-focus-within:opacity-100 transition-all duration-300 scale-0 group-focus-within:scale-100">
+                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                  <i class="fas fa-check text-white text-sm"></i>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Декоративный элемент -->
+            <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full group-focus-within:w-full transition-all duration-500"></div>
+          </div>
+        </div>
+
+        <!-- Поле пароля -->
+        <div class="relative transform transition-all duration-300 hover:scale-[1.02]">
+          <label class="block mb-4 font-bold text-gray-800 flex items-center justify-center gap-3 text-xl">
+            <div class="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+              <i class="fas fa-lock text-white text-sm"></i>
+            </div>
+            Пароль
+          </label>
+          <div class="relative group">
+            <!-- Анимированная граница -->
+            <div class="absolute inset-0 bg-gradient-to-r from-orange-400 via-amber-400 to-red-400 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-sm"></div>
+            
+            <!-- Основное поле -->
+            <div class="relative bg-white rounded-2xl shadow-lg group-focus-within:shadow-2xl transition-all duration-300">
+              <span class="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-amber-500 transition-all duration-300 group-focus-within:scale-110">
+                <i class="fas fa-lock text-xl"></i>
+              </span>
+              {{ form.password|add_class:"w-full border-3 border-gradient-to-r from-orange-200 to-amber-200 bg-gradient-to-br from-orange-25 via-amber-25 to-yellow-25 rounded-2xl pl-16 pr-16 py-5 text-xl text-center focus:outline-none focus:ring-0 focus:border-transparent transition-all duration-300 hover:shadow-lg font-medium placeholder-gray-400" }}
+              
+              <!-- Кнопка показа/скрытия пароля -->
+              <div class="absolute right-5 top-1/2 transform -translate-y-1/2 transition-all duration-300">
+                <button type="button" class="w-10 h-10 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-amber-100 hover:to-orange-100 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 group" onclick="togglePassword(this)">
+                  <i class="fas fa-eye text-gray-500 group-hover:text-amber-600 transition-colors duration-300"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Декоративный элемент -->
+            <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full group-focus-within:w-full transition-all duration-500"></div>
+          </div>
+
+          <!-- Индикатор силы пароля -->
+          <div class="mt-3 hidden group-focus-within:block">
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 rounded-full w-0 transition-all duration-500" id="password-strength"></div>
+              </div>
+              <span class="text-xs font-medium text-gray-600" id="password-text">Введите пароль</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if login_type == 'phone' %}
+      <button type="submit" style="background: linear-gradient(to right, #3b82f6, #4f46e5, #7c3aed); color: white; font-weight: 700; padding: 12px 20px; border-radius: 12px; border: 2px solid #60a5fa; font-size: 16px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);" class="group relative overflow-hidden transform hover:scale-105 transition-all duration-300">
+        <i class="fas fa-mobile-alt text-lg"></i>
+        <span style="font-weight: 700;">Войти / Создать аккаунт</span>
+        <i class="fas fa-arrow-right text-sm"></i>
+      </button>
+      <p class="text-center text-sm text-gray-600 mt-4 font-medium">
+        <i class="fas fa-magic text-blue-500 mr-2"></i>
+        <span class="text-blue-600 font-bold">Быстрый вход</span> или <span class="text-green-600 font-bold">автоматическая регистрация</span>
+      </p>
+    {% else %}
+      <button type="submit" style="background: linear-gradient(to right, #f59e0b, #ea580c, #dc2626); color: white; font-weight: 700; padding: 12px 20px; border-radius: 12px; border: 2px solid #fbbf24; font-size: 16px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);" class="group relative overflow-hidden transform hover:scale-105 transition-all duration-300">
+        <i class="fas fa-store text-lg"></i>
+        <span style="font-weight: 700;">Войти в панель продавца</span>
+        <i class="fas fa-arrow-right text-sm"></i>
+      </button>
+      <p class="text-center text-sm text-gray-600 mt-4 font-medium">
+        <i class="fas fa-shield-alt text-amber-500 mr-2"></i>
+        <span class="text-amber-600 font-bold">Безопасный вход</span> для управления товарами
+      </p>
+    {% endif %}
+
+    {% if is_master %}
+    <div style="background: linear-gradient(135deg, #fef3c7, #fed7aa, #fecaca); padding: 20px; border-radius: 12px; border: 2px solid #f59e0b; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); margin-top: 24px; text-align: center;">
+      <div class="relative z-10">
+        <div class="mb-3">
+          <i class="fas fa-user-plus" style="font-size: 28px; color: #d97706; animation: bounce 2s infinite;"></i>
+        </div>
+        <h3 style="font-size: 18px; font-weight: 700; color: #92400e; margin-bottom: 6px;">Новый продавец?</h3>
+        <p style="color: #a16207; font-weight: 500; margin-bottom: 16px; font-size: 14px;">
+          Присоединяйтесь к нашей платформе и начните зарабатывать!
+        </p>
+        <a href="{% url 'accounts:master_register' %}" style="background: linear-gradient(to right, #f59e0b, #ea580c); color: white; font-weight: 700; padding: 10px 24px; border-radius: 10px; border: 2px solid #fbbf24; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); text-decoration: none;" class="transform hover:scale-105 transition-all duration-300">
+          <i class="fas fa-store text-lg"></i>
+          <span style="font-weight: 700;">Стать продавцом</span>
+          <i class="fas fa-arrow-right text-sm"></i>
+        </a>
+        <p style="font-size: 12px; color: #a16207; margin-top: 12px; font-weight: 500;">
+          <i class="fas fa-star" style="color: #f59e0b; margin-right: 4px;"></i>
+          Начните продавать свои товары уже сегодня
+        </p>
+      </div>
+    </div>
+    {% else %}
+    <div style="background: linear-gradient(135deg, #dbeafe, #e0e7ff, #ede9fe); padding: 20px; border-radius: 12px; border: 2px solid #3b82f6; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); margin-top: 24px; text-align: center;">
+      <div class="relative z-10">
+        <div class="mb-3">
+          <i class="fas fa-store" style="font-size: 28px; color: #2563eb; animation: bounce 2s infinite;"></i>
+        </div>
+        <h3 style="font-size: 18px; font-weight: 700; color: #1e40af; margin-bottom: 6px;">Хотите продавать?</h3>
+        <p style="color: #1d4ed8; font-weight: 500; margin-bottom: 16px; font-size: 14px;">
+          Откройте для себя возможности бизнеса на нашей платформе
+        </p>
+        <a href="{% url 'accounts:master_login' %}" style="background: linear-gradient(to right, #3b82f6, #4f46e5); color: white; font-weight: 700; padding: 10px 24px; border-radius: 10px; border: 2px solid #60a5fa; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); text-decoration: none;" class="transform hover:scale-105 transition-all duration-300">
+          <i class="fas fa-briefcase text-lg"></i>
+          <span style="font-weight: 700;">Портал продавца</span>
+          <i class="fas fa-arrow-right text-sm"></i>
+        </a>
+        <p style="font-size: 12px; color: #1d4ed8; margin-top: 12px; font-weight: 500;">
+          <i class="fas fa-chart-line" style="color: #3b82f6; margin-right: 4px;"></i>
+          Управляйте товарами и отслеживайте продажи
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </form>
+</div>
+
+<script>
+function togglePassword(element) {
+  const passwordField = element.closest('.relative').querySelector('input[type="password"], input[type="text"]');
+  const icon = element.querySelector('i');
+  
+  if (passwordField.type === 'password') {
+    passwordField.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+    element.classList.add('bg-amber-100');
+  } else {
+    passwordField.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+    element.classList.remove('bg-amber-100');
+  }
+}
+
+// Индикатор силы пароля
+function updatePasswordStrength(password) {
+  const strengthBar = document.getElementById('password-strength');
+  const strengthText = document.getElementById('password-text');
+  
+  if (!strengthBar || !strengthText) return;
+  
+  let strength = 0;
+  let text = 'Очень слабый';
+  
+  if (password.length >= 6) strength += 25;
+  if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength += 25;
+  if (password.match(/[0-9]/)) strength += 25;
+  if (password.match(/[^a-zA-Z0-9]/)) strength += 25;
+  
+  if (strength >= 75) text = 'Отличный';
+  else if (strength >= 50) text = 'Хороший';
+  else if (strength >= 25) text = 'Слабый';
+  
+  strengthBar.style.width = strength + '%';
+  strengthText.textContent = text;
+}
+
+// Анимации при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+  const inputs = document.querySelectorAll('input[type="text"], input[type="password"], input[type="tel"]');
+  
+  // Анимация появления полей
+  inputs.forEach((input, index) => {
+    const container = input.closest('.relative');
+    container.style.opacity = '0';
+    container.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+      container.style.transition = 'all 0.6s ease';
+      container.style.opacity = '1';
+      container.style.transform = 'translateY(0)';
+    }, index * 200);
+  });
+  
+  // Обработчик для индикатора силы пароля
+  const passwordField = document.querySelector('input[type="password"]');
+  if (passwordField) {
+    passwordField.addEventListener('input', function() {
+      updatePasswordStrength(this.value);
+    });
+  }
+  
+  // Эффект печатания в placeholder
+  inputs.forEach(input => {
+    const originalPlaceholder = input.placeholder;
+    if (originalPlaceholder) {
+      input.placeholder = '';
+      let i = 0;
+      
+      input.addEventListener('focus', function() {
+        if (this.value === '') {
+          const typeEffect = setInterval(() => {
+            if (i < originalPlaceholder.length) {
+              this.placeholder += originalPlaceholder.charAt(i);
+              i++;
+            } else {
+              clearInterval(typeEffect);
+            }
+          }, 50);
+        }
+      });
+      
+      input.addEventListener('blur', function() {
+        if (this.value === '') {
+          this.placeholder = originalPlaceholder;
+          i = 0;
+        }
+      });
+    }
+  });
+  
+  // Эффект волны при фокусе
+  inputs.forEach(input => {
+    input.addEventListener('focus', function() {
+      const container = this.closest('.group');
+      container.style.transform = 'scale(1.02)';
+      
+      // Создаем эффект волны
+      const ripple = document.createElement('div');
+      ripple.className = 'absolute inset-0 bg-gradient-to-r from-amber-400/20 to-orange-400/20 rounded-2xl animate-pulse pointer-events-none';
+      container.appendChild(ripple);
+      
+      setTimeout(() => {
+        ripple.remove();
+      }, 1000);
+    });
+    
+    input.addEventListener('blur', function() {
+      const container = this.closest('.group');
+      container.style.transform = 'scale(1)';
+    });
+  });
+});
+</script>
+
+{% endblock %}

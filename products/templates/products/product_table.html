@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4">
+  <h1 class="text-2xl font-bold mb-6 text-center">Каталог товаров Fruitsite</h1>
+  
+  <!-- Фильтры -->
+  <div class="mb-6 bg-white p-4 rounded-lg shadow">
+    <form method="GET" class="flex flex-wrap items-center gap-4">
+      <div class="flex-1 min-w-64">
+        <input type="text" name="search" value="{{ request.GET.search }}" 
+               placeholder="Поиск по наименованию..." 
+               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div>
+        <select name="category" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">Все категории</option>
+          {% for category in categories %}
+            <option value="{{ category.id }}" {% if request.GET.category == category.id|slugify %}selected{% endif %}>
+              {{ category.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+        Применить
+      </button>
+    </form>
+  </div>
+
+  <!-- Таблица товаров в стиле Excel -->
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+              Наименование продукции
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+              Объем, г
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+              Вид упаковки
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+              Количество в упаковке
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+              Цена за единицу
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+              Цена за упаковку
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+              Количество
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Действие
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for product in products %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap border-r border-gray-200">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-10 w-10 mr-3">
+                  <div class="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <span class="text-sm font-semibold text-green-600">🍎</span>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-sm font-medium text-gray-900">{{ product.name }}</div>
+                  <div class="text-sm text-gray-500">{{ product.category.name|default:"Без категории" }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+              {{ product.volume|default:"—" }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+              {{ product.package_type|default:"—" }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
+              {{ product.quantity_in_package }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200">
+              {% if product.price_per_unit > 0 %}
+                {{ product.price_per_unit }} сом
+              {% else %}
+                {{ product.price }} сом
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 border-r border-gray-200">
+              {% if product.price_per_package > 0 %}
+                {{ product.price_per_package }} сом
+              {% else %}
+                {{ product.price }} сом
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap border-r border-gray-200">
+              <div class="flex items-center space-x-2 mb-2">
+                <button type="button" onclick="decreaseQuantity({{ product.id }})" 
+                        class="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition">
+                  −
+                </button>
+                <input type="number" id="quantity-{{ product.id }}" min="1" max="{{ product.stock }}" value="1" 
+                       class="w-16 text-center border border-gray-300 rounded px-2 py-1 text-sm">
+                <button type="button" onclick="increaseQuantity({{ product.id }})" 
+                        class="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition">
+                  +
+                </button>
+              </div>
+              <div class="mb-2">
+                <select id="unit-type-{{ product.id }}" class="w-full text-xs border border-gray-300 rounded px-2 py-1" onchange="updatePrice({{ product.id }})">
+                  <option value="unit">За единицу ({{ product.price_per_unit|default:product.price }} сом)</option>
+                  {% if product.price_per_package > 0 %}
+                    <option value="package">За упаковку ({{ product.price_per_package }} сом)</option>
+                  {% endif %}
+                </select>
+              </div>
+              <div class="text-xs text-gray-500">
+                В наличии: {{ product.stock }}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <button onclick="addToCart({{ product.id }})" 
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
+                В корзину
+              </button>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+              Товары не найдены
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- Пагинация -->
+  {% if products.has_other_pages %}
+  <div class="mt-6 flex justify-center">
+    <nav class="flex items-center space-x-2">
+      {% if products.has_previous %}
+        <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+           class="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Первая</a>
+        <a href="?page={{ products.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+           class="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Предыдущая</a>
+      {% endif %}
+      
+      <span class="px-3 py-2">
+        Страница {{ products.number }} из {{ products.paginator.num_pages }}
+      </span>
+      
+      {% if products.has_next %}
+        <a href="?page={{ products.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+           class="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Следующая</a>
+        <a href="?page={{ products.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+           class="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Последняя</a>
+      {% endif %}
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+<!-- JavaScript для управления количеством и добавления в корзину -->
+<script>
+function decreaseQuantity(productId) {
+    const input = document.getElementById(`quantity-${productId}`);
+    const currentValue = parseInt(input.value);
+    if (currentValue > 1) {
+        input.value = currentValue - 1;
+    }
+}
+
+function increaseQuantity(productId) {
+    const input = document.getElementById(`quantity-${productId}`);
+    const currentValue = parseInt(input.value);
+    const maxValue = parseInt(input.max);
+    if (currentValue < maxValue) {
+        input.value = currentValue + 1;
+    }
+}
+
+function addToCart(productId) {
+    const quantity = document.getElementById(`quantity-${productId}`).value;
+    const unitType = document.getElementById(`unit-type-${productId}`).value;
+    
+    // Отправляем AJAX-запрос для добавления в корзину
+    fetch("{% url 'cart:add_to_cart_ajax' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            'product_id': productId,
+            'quantity': parseInt(quantity),
+            'unit_type': unitType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Показываем уведомление об успешном добавлении
+            showNotification('Товар добавлен в корзину!', 'success');
+            // Обновляем счетчик корзины, если он есть
+            updateCartCounter();
+        } else {
+            showNotification(data.message || 'Ошибка при добавлении в корзину', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ошибка при добавлении в корзину', 'error');
+    });
+}
+
+function updatePrice(productId) {
+    // Можно добавить логику для обновления отображаемой цены при смене единицы измерения
+    // Пока просто визуальное обновление
+}
+
+function showNotification(message, type) {
+    // Создаем элемент уведомления
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-4 py-2 rounded-md text-white z-50 transition-opacity ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Удаляем уведомление через 3 секунды
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+function updateCartCounter() {
+    // Получаем новое количество товаров в корзине через AJAX
+    fetch('/cart/count/', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const cartBadge = document.getElementById('cart-counter');
+        if (cartBadge) {
+            if (data.count > 0) {
+                cartBadge.textContent = data.count;
+                cartBadge.classList.remove('hidden');
+            } else {
+                cartBadge.classList.add('hidden');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error updating cart counter:', error);
+    });
+}
+</script>
+
+<!-- CSRF токен для AJAX-запросов -->
+{% csrf_token %}
+{% endblock %}
